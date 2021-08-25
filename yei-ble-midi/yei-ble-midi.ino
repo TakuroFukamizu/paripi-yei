@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <BLEMidi.h>
 #include <FastLED.h>
+#include "Button.h"
 
 /**
  * 必要なArduinoライブラリ
@@ -14,15 +15,20 @@
 
 #define BLE_DEVICE_NAME "PARIPI-YEI-01"
 #define PIN_LEDS 19
-#define NUM_LEDS 80
+#define NUM_LEDS 100
 #define MAX_BRIGHTNESS 255   /* Control the brightness of your leds */
-#define SATURATION 128   /* Control the saturation of your leds */
+#define SATURATION 255   /* Control the saturation of your leds */
 #define MAX_HUE 360
 #define MAX_PERFORMANCE_STEP 10
 
 #define MIDI_CC_DURATION 2
 #define MIDI_CC_COLOR_HUE 3
 #define MIDI_VALUE_MAX 127
+
+#define MODE_PARIPI 0
+#define MODE_GAMING 1
+#define MODE_BLEMIDI 2
+
 
 //-------------------------------
 uint8_t brightness = MAX_BRIGHTNESS;
@@ -34,6 +40,11 @@ uint16_t currentNoteOnTimestamp = 0;
 bool isPlaying = false;
 uint8_t playIndex = 0;
 
+uint8_t gamingHue = 0;
+
+byte mode = MODE_PARIPI; 
+
+Button Btn = Button(39, true, 10);
 //-------------------------------
 
 void connected();
@@ -73,11 +84,27 @@ void setup() {
         NULL,
         0
     );
+
+    randomSeed(analogRead(0)); 
+
+    // 起動時はスタンドアローン
+    mode = MODE_PARIPI; 
 }
 
 void loop() {
     if (BLEMidiServer.isConnected()) {
         Serial.println("connected");
+    }
+    Btn.read();
+    if (Btn.wasPressed()) {
+      // モード切り替え(Standalone Paripi -> Standalone GAMING -> BLE MIDI)
+      mode++;
+      if (MODE_BLEMIDI < mode) {
+        mode = MODE_PARIPI;
+      }
+      // モード切り替え時に、BLEの演出用のデータをクリア
+      isPlaying = false;
+      playIndex = 0;
     }
     delay(100);
 }
@@ -119,10 +146,42 @@ void onControlChange(uint8_t channel, uint8_t controller, uint8_t value, uint16_
     }
 }
 
+uint8_t gamingHueIndex = 0;
+
 /** 演出処理のタスク */
 void performanceTask(void *pvParameters) {
     while(1){
-        if (isPlaying) {
+        if (mode == MODE_PARIPI) {
+            // スタンドアロンモード/パリピ
+            for (int i = 0; i < NUM_LEDS; i = i + 2) {
+                // 1st
+                hue = (int)random(0, 128) * 2;
+                leds[i] = CHSV(hue, SATURATION, 128);
+        
+                // 2nd
+                hue = (int)random(0, 16) * 16;
+                leds[i + 1] = CHSV(hue, SATURATION, 128);
+            }
+            FastLED.show();
+            vTaskDelay(50);
+        } else if (mode == MODE_GAMING) {
+            // スタンドアロンモード/ゲーミング
+            uint8_t hue = gamingHueIndex;
+            for (int i = 0; i < NUM_LEDS; i++) {
+                hue += 10;
+                if (255 < hue) {
+                  hue - 0;
+                }
+                leds[i] = CHSV(hue, SATURATION, 128);
+            }
+            FastLED.show();
+            gamingHueIndex+=20;
+            if (255 < gamingHueIndex) {
+                gamingHueIndex = 0;
+            }
+            vTaskDelay(50);
+        } else if (mode == MODE_BLEMIDI && isPlaying) {
+            // BLEモード
             if (currentNoteOnTimestamp != latestNoteOnTimestamp) { // 新着noteOn有り = 今の演出をキャンセル
                 playIndex = 0;
                 currentNoteOnTimestamp = latestNoteOnTimestamp;
