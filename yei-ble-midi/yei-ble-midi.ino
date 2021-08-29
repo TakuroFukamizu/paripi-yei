@@ -15,7 +15,7 @@
 
 #define BLE_DEVICE_NAME "PARIPI-YEI-01"
 #define PIN_LEDS 19
-#define NUM_LEDS 100
+#define NUM_LEDS 76 // 16 * 2 + 22 * 2
 #define MAX_BRIGHTNESS 255   /* Control the brightness of your leds */
 #define SATURATION 255   /* Control the saturation of your leds */
 #define MAX_HUE 360
