@@ -16,13 +16,15 @@
 #define BLE_DEVICE_NAME "PARIPI-YEI-01"
 #define PIN_LEDS 19
 #define NUM_LEDS 76 // 16 * 2 + 22 * 2
-#define MAX_BRIGHTNESS 255   /* Control the brightness of your leds */
-#define SATURATION 255   /* Control the saturation of your leds */
+#define MAX_BRIGHTNESS 255
+#define DEF_SATURATION 64
 #define MAX_HUE 360
+#define MAX_SATURATION 255
 #define MAX_PERFORMANCE_STEP 10
 
 #define MIDI_CC_DURATION 2
-#define MIDI_CC_COLOR_HUE 3
+#define MIDI_CC_COLOR_HUE 3 // 色相
+#define MIDI_CC_COLOR_SATURATION 4 // 彩度
 #define MIDI_VALUE_MAX 127
 
 #define MODE_PARIPI 0
@@ -34,6 +36,7 @@
 uint8_t brightness = MAX_BRIGHTNESS;
 CRGB leds[NUM_LEDS];
 int hue;
+uint8_t saturation = DEF_SATURATION;
 uint8_t duration = 100;
 uint16_t latestNoteOnTimestamp = 0;
 uint16_t currentNoteOnTimestamp = 0;
@@ -143,6 +146,9 @@ void onControlChange(uint8_t channel, uint8_t controller, uint8_t value, uint16_
         case MIDI_CC_COLOR_HUE: // LEDの色を設定
             hue = (uint8_t)value * (float)MAX_HUE / (float)MIDI_VALUE_MAX;
             break;
+        case MIDI_CC_COLOR_SATURATION: // LEDの彩度を設定
+            saturation = (uint8_t)value * (float)MAX_SATURATION / (float)MIDI_VALUE_MAX;
+            break;
     }
 }
 
@@ -193,7 +199,7 @@ void performanceTask(void *pvParameters) {
             Serial.println(playIndex);
             for (int i = 0; i < NUM_LEDS; i++)
             {
-                leds[i] = CHSV(hue, SATURATION, v);
+                leds[i] = CHSV(hue, saturation, v);
             }
 
             playIndex++;
