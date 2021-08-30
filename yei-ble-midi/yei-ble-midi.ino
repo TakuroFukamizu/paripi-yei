@@ -21,6 +21,8 @@
 #define MAX_HUE 360
 #define MAX_SATURATION 255
 #define MAX_PERFORMANCE_STEP 10
+#define STAL_SATURATION 255 // スタンドアロンモード(パリピ, ゲーミング)用の彩度
+#define STAL_BRIGHTNESS 128 // スタンドアロンモード(パリピ, ゲーミング)用の明度(輝度)
 
 #define MIDI_CC_DURATION 2
 #define MIDI_CC_COLOR_HUE 3 // 色相
@@ -166,7 +168,7 @@ void performanceTask(void *pvParameters) {
         
                 // 2nd
                 hue = (int)random(0, 16) * 16;
-                leds[i + 1] = CHSV(hue, SATURATION, 128);
+                leds[i + 1] = CHSV(hue, STAL_SATURATION, STAL_BRIGHTNESS);
             }
             FastLED.show();
             vTaskDelay(50);
@@ -178,7 +180,7 @@ void performanceTask(void *pvParameters) {
                 if (255 < hue) {
                   hue - 0;
                 }
-                leds[i] = CHSV(hue, SATURATION, 128);
+                leds[i] = CHSV(hue, STAL_SATURATION, STAL_BRIGHTNESS);
             }
             FastLED.show();
             gamingHueIndex+=20;
