@@ -164,7 +164,7 @@ void performanceTask(void *pvParameters) {
             for (int i = 0; i < NUM_LEDS; i = i + 2) {
                 // 1st
                 hue = (int)random(0, 128) * 2;
-                leds[i] = CHSV(hue, SATURATION, 128);
+                leds[i] = CHSV(hue, STAL_SATURATION, 128);
         
                 // 2nd
                 hue = (int)random(0, 16) * 16;
